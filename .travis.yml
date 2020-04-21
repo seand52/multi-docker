@@ -1,0 +1,23 @@
+language: generic
+sudo: required
+services:
+    - docker
+before_install:
+    - docker build -t seand52/react-test -f ./client/Dockerfile.dev ./client
+script:
+    - docker run -e CI=true seand52/react-test yarn test
+
+after_success:
+    # Build production images of our application
+    - docker build -t seand52/multi-client ./client
+    - docker build -t seand52/multi-nginx ./nginx
+    - docker build -t seand52/multi-server ./server
+    - docker build -t seand52/multi-worker ./worker
+
+    # Log in to docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    # Push the images to docker hub
+    - docker push seand52/multi-client
+    - docker push seand52/multi-nginx
+    - docker push seand52/multi-server
+    - docker push seand52/multi-worker
